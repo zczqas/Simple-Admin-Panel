@@ -1,15 +1,16 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.config import settings
 from app.url import InitializeRouter
 
 
 def get_application():
     app = FastAPI(
-        title="Simple Admin Panel",
-        debug=True,
-        version="0.1.0",
-        description="A simple admin panel for managing records of artists.",
+        title=settings.PROJECT_NAME,
+        debug=settings.DEBUG,
+        version=settings.VERSION,
+        description=settings.PROJECT_DESCRIPTION,
     )
 
     origins = ["*"]
