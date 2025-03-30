@@ -47,7 +47,7 @@ def get_user_by_id(user_id: int):
     return user
 
 
-@router.get("/", response_model=PaginatedResponse[UserResponseSchema])
+@router.get("", response_model=PaginatedResponse[UserResponseSchema])
 def get_all_users(page: int = 1, page_size: int = 10):
     if page < 1 or page_size < 1:
         raise HTTPException(
