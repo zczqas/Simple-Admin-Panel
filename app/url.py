@@ -9,4 +9,4 @@ class InitializeRouter:
 
     def initialize_router(self):
         for prefix, router in routers.items():
-            self.app.include_router(router, prefix="/api/v1", tags=[prefix])
+            self.app.include_router(router=router, prefix="/api/v1", tags=[prefix])

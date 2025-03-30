@@ -28,7 +28,7 @@ def get_application():
 
 app = get_application()
 
-InitializeRouter(app)
+InitializeRouter(app).initialize_router()
 
 
 @app.get("/")
