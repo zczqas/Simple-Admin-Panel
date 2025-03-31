@@ -18,6 +18,7 @@ class ArtistBaseSchema(BaseModel):
 class ArtistCreateSchema(BaseModel):
     name: str
     dob: date
+    gender: GenderEnum
     address: str
     first_release_year: str
     no_of_albums_released: int

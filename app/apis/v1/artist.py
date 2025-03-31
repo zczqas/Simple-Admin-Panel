@@ -57,9 +57,13 @@ def create_artist(artist: ArtistCreateSchema):
             detail="Artist with this name already exists",
         )
 
+    gender_value = (
+        artist.gender.value if hasattr(artist.gender, "value") else artist.gender
+    )
+
     insert_query = """
-        INSERT INTO artists (name, dob, address, first_release_year, no_of_albums_released)
-        VALUES (%s, %s, %s, %s, %s) RETURNING id
+        INSERT INTO artists (name, dob, address, first_release_year, no_of_albums_released, gender)
+        VALUES (%s, %s, %s, %s, %s, %s) RETURNING id
     """
 
     try:
@@ -71,6 +75,7 @@ def create_artist(artist: ArtistCreateSchema):
                 artist.address,
                 artist.first_release_year,
                 artist.no_of_albums_released,
+                gender_value,
             ),
         )
         return {
@@ -99,11 +104,16 @@ def update_artist(artist_id: int, artist: ArtistUpdateSchema):
     allowed_columns = {
         "name",
         "dob",
+        "gender",
         "address",
         "first_release_year",
         "no_of_albums_released",
     }
     artist_data = artist.model_dump(exclude_unset=True)
+
+    if "gender" in artist_data and hasattr(artist_data["gender"], "value"):
+        artist_data["gender"] = artist_data["gender"].value
+
     artist_data = {k: v for k, v in artist_data.items() if k in allowed_columns}
     if not artist_data:
         raise HTTPException(
@@ -119,7 +129,7 @@ def update_artist(artist_id: int, artist: ArtistUpdateSchema):
         UPDATE artists
         SET {", ".join(update_fields)}
         WHERE id = %s
-        RETURNING id, name, dob, address, first_release_year, no_of_albums_released
+        RETURNING id, name, dob, gender, address, first_release_year, no_of_albums_released
     """
 
     try:
