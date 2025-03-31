@@ -113,11 +113,6 @@ def update_user(user_id: int, user: UserCreateSchema):
 
     try:
         updated_user = fetch_one(update_query, tuple(update_values))
-        if not updated_user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found.",
-            )
         return updated_user
     except Exception as e:
         raise HTTPException(
