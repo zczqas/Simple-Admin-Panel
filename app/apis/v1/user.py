@@ -10,22 +10,32 @@ router = APIRouter(prefix="/user", tags=["user"])
 @router.post("/create", status_code=status.HTTP_201_CREATED)
 def create_user(user: UserCreateSchema):
     check_query = "SELECT id FROM users WHERE email = %s"
-    existing_user = fetch_one(check_query, (user.first_name, user.email))
+    existing_user = fetch_one(check_query, (user.email,))
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User with this email already exists",
         )
 
+    gender_value = user.gender.value if hasattr(user.gender, "value") else user.gender
+
     insert_query = """
-        INSERT INTO users (first_name, last_name, email, password)
-        VALUES (%s, %s, %s, %s) RETURNING id
+        INSERT INTO users (first_name, last_name, email, password, phone, dob, gender)
+        VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id
     """
 
     try:
         created_user = fetch_one(
             insert_query,
-            (user.first_name, user.last_name, user.email, user.password),
+            (
+                user.first_name,
+                user.last_name,
+                user.email,
+                user.password,
+                user.phone,
+                user.dob,
+                gender_value,
+            ),
         )
         return created_user
     except Exception as e:
@@ -90,6 +100,10 @@ def update_user(user_id: int, user: UserCreateSchema):
         "gender",
     }
     user_data = user.model_dump(exclude_unset=True)
+
+    if "gender" in user_data and hasattr(user_data["gender"], "value"):
+        user_data["gender"] = user_data["gender"].value
+
     user_data = {
         k: v for k, v in user_data.items() if k in allowed_columns and v is not None
     }
