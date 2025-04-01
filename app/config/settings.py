@@ -26,3 +26,6 @@ ALLOWED_HOSTS: list[str] = config(
 SECRET_KEY: Secret = config("SECRET_KEY", default="secret")
 ALGORITHM: str = config("ALGORITHM", default="HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES: int = config("ACCESS_TOKEN_EXPIRE_MINUTES", default=300)
+REFRESH_TOKEN_TIME_IN_MINUTES: int = config(
+    "REFRESH_TOKEN_TIME_IN_MINUTES", default=43200
+)

@@ -26,6 +26,7 @@ class UserCreateSchema(BaseModel):
     last_name: Optional[str] = None
     email: Optional[EmailStr] = None
     password: Optional[str] = None
+    confirm_password: Optional[str] = None
     phone: Optional[str] = None
     dob: Optional[date] = None
     gender: Optional[GenderEnum] = None

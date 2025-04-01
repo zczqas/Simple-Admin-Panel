@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status
 
+from app.security.auth import jwt_security
 from app.config.db.conn import execute_query, fetch_one, fetch_paginated
 from app.core.schema.base import PaginatedResponse
 from app.core.schema.user import UserCreateSchema, UserResponseSchema
@@ -17,11 +18,36 @@ def create_user(user: UserCreateSchema):
             detail="User with this email already exists",
         )
 
+    if user.password != user.confirm_password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Passwords do not match",
+        )
+
+    needed_columns = {
+        "first_name",
+        "last_name",
+        "email",
+        "password",
+        "phone",
+        "dob",
+        "gender",
+    }
+    user_data = user.model_dump(exclude_unset=True)
+    missing_columns = needed_columns - user_data.keys()
+    if missing_columns:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Missing required fields: {', '.join(missing_columns)}",
+        )
+
     gender_value = user.gender.value if hasattr(user.gender, "value") else user.gender
+    role_value = user.role.value if hasattr(user.role, "value") else user.role
+    hashed_password = jwt_security.get_password_hash(user.password)
 
     insert_query = """
-        INSERT INTO users (first_name, last_name, email, password, phone, dob, gender)
-        VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING id
+        INSERT INTO users (first_name, last_name, email, password, phone, dob, gender, role)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s) RETURNING id
     """
 
     try:
@@ -31,10 +57,11 @@ def create_user(user: UserCreateSchema):
                 user.first_name,
                 user.last_name,
                 user.email,
-                user.password,
+                hashed_password,
                 user.phone,
                 user.dob,
                 gender_value,
+                role_value,
             ),
         )
         return created_user
@@ -45,8 +72,14 @@ def create_user(user: UserCreateSchema):
         ) from e
 
 
-@router.get("/{user_id}", response_model=UserResponseSchema)
-def get_user_by_id(user_id: int):
+@router.get(
+    "/{user_id}",
+    response_model=UserResponseSchema,
+)
+def get_user_by_id(
+    user_id: int,
+    _=Depends(jwt_security.get_current_user),
+):
     query = "SELECT * FROM users WHERE id = %s"
     user = fetch_one(query, (user_id,))
     if not user:
@@ -81,7 +114,11 @@ def get_all_users(page: int = 1, page_size: int = 10):
 
 
 @router.put("/update/{user_id}")
-def update_user(user_id: int, user: UserCreateSchema):
+def update_user(
+    user_id: int,
+    user: UserCreateSchema,
+    _=Depends(jwt_security.get_current_user),
+):
     check_query = "SELECT id FROM users WHERE id = %s"
     existing_user = fetch_one(check_query, (user_id,))
     if not existing_user:
@@ -136,7 +173,10 @@ def update_user(user_id: int, user: UserCreateSchema):
 
 
 @router.delete("/delete/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_user(user_id: int):
+def delete_user(
+    user_id: int,
+    _=Depends(jwt_security.get_current_user),
+):
     check_query = "SELECT id FROM users WHERE id = %s"
     existing_user = fetch_one(check_query, (user_id,))
     if not existing_user:
