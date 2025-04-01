@@ -1,7 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from datetime import datetime, date
-from app.common.enums import GenderEnum
+from app.common.enums import GenderEnum, UserRoleEnum
 
 
 class UserBaseSchema(BaseModel):
@@ -12,6 +12,7 @@ class UserBaseSchema(BaseModel):
     phone: Optional[str] = None
     dob: Optional[date] = None
     gender: Optional[GenderEnum] = None
+    role: Optional[UserRoleEnum] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -28,3 +29,4 @@ class UserCreateSchema(BaseModel):
     phone: Optional[str] = None
     dob: Optional[date] = None
     gender: Optional[GenderEnum] = None
+    role: Optional[UserRoleEnum] = None

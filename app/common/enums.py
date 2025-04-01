@@ -13,3 +13,8 @@ class GenreEnum(Enum):
     CLASSIC = "CLASSIC"
     ROCK = "ROCK"
     JAZZ = "JAZZ"
+
+
+class UserRoleEnum(Enum):
+    ADMIN = "ADMIN"
+    USER = "USER"
