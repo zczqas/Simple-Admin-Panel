@@ -1,5 +1,5 @@
 dev:
-	@docker-compose --env-file .env up --build -d
+	@docker-compose --env-file .env up --build
 dev-down:
 	@docker-compose down
 dev-logs:

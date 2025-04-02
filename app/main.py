@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.config import settings
 from app.url import InitializeRouter
@@ -13,11 +14,11 @@ def get_application():
         description=settings.PROJECT_DESCRIPTION,
     )
 
-    origins = ["*"]
+    app.mount("/static", StaticFiles(directory="static", html=True), name="static")
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=origins,
+        allow_origins=settings.ALLOWED_HOSTS,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -27,6 +28,7 @@ def get_application():
 
 
 app = get_application()
+
 
 InitializeRouter(app).initialize_router()
 

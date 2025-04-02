@@ -19,7 +19,6 @@ PROJECT_DESCRIPTION: str = config(
     "PROJECT_DESCRIPTION", default="Artist Management API"
 )
 
-
 ALLOWED_HOSTS: list[str] = config(
     "ALLOWED_HOSTS", cast=CommaSeparatedStrings, default="*"
 )
