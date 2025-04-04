@@ -1,0 +1,272 @@
+<div
+  class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center"
+>
+  <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+    <div class="flex justify-between items-center mb-4">
+      <h3 class="text-lg font-bold" id="form-title">Add New User</h3>
+      <button class="text-gray-500 hover:text-gray-700" onclick="closeModal()">
+        &times;
+      </button>
+    </div>
+
+    <form id="user-form" hx-swap="outerHTML">
+      <input type="hidden" id="user-id" name="id" value="" />
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div>
+          <label
+            class="block text-gray-700 text-sm font-bold mb-2"
+            for="first-name"
+          >
+            First Name
+          </label>
+          <input
+            class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="first-name"
+            name="first_name"
+            type="text"
+            required
+          />
+        </div>
+        <div>
+          <label
+            class="block text-gray-700 text-sm font-bold mb-2"
+            for="last-name"
+          >
+            Last Name
+          </label>
+          <input
+            class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="last-name"
+            name="last_name"
+            type="text"
+            required
+          />
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-gray-700 text-sm font-bold mb-2" for="email">
+          Email
+        </label>
+        <input
+          class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          id="email"
+          name="email"
+          type="email"
+          required
+        />
+      </div>
+
+      <div class="mb-4" id="password-fields">
+        <div class="mb-4">
+          <label
+            class="block text-gray-700 text-sm font-bold mb-2"
+            for="password"
+          >
+            Password
+          </label>
+          <input
+            class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="password"
+            name="password"
+            type="password"
+          />
+        </div>
+        <div class="mb-4">
+          <label
+            class="block text-gray-700 text-sm font-bold mb-2"
+            for="confirm-password"
+          >
+            Confirm Password
+          </label>
+          <input
+            class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="confirm-password"
+            name="confirm_password"
+            type="password"
+          />
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-gray-700 text-sm font-bold mb-2" for="phone">
+          Phone
+        </label>
+        <input
+          class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          id="phone"
+          name="phone"
+          type="text"
+        />
+      </div>
+
+      <div class="grid grid-cols-2 gap-4 mb-4">
+        <div>
+          <label class="block text-gray-700 text-sm font-bold mb-2" for="dob">
+            Date of Birth
+          </label>
+          <input
+            class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="dob"
+            name="dob"
+            type="date"
+          />
+        </div>
+        <div>
+          <label
+            class="block text-gray-700 text-sm font-bold mb-2"
+            for="gender"
+          >
+            Gender
+          </label>
+          <select
+            class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            id="gender"
+            name="gender"
+          >
+            <option value="M">Male</option>
+            <option value="F">Female</option>
+            <option value="O">Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-gray-700 text-sm font-bold mb-2" for="role">
+          Role
+        </label>
+        <select
+          class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          id="role"
+          name="role"
+        >
+          <option value="USER">User</option>
+          <option value="ADMIN">Admin</option>
+        </select>
+      </div>
+
+      <div class="flex justify-end space-x-2">
+        <button
+          type="button"
+          class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+          onclick="closeModal()"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+          id="submit-button"
+        >
+          Save
+        </button>
+      </div>
+    </form>
+
+    <div id="form-result" class="mt-4"></div>
+  </div>
+</div>
+
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const userId = urlParams.get("id");
+  const form = document.getElementById("user-form");
+  const formTitle = document.getElementById("form-title");
+
+  if (userId) {
+    formTitle.textContent = "Edit User";
+    document.getElementById("user-id").value = userId;
+
+    fetch(`/api/v1/user/${userId}`, {
+      headers: {
+        Authorization: "Bearer " + localStorage.getItem("access_token"),
+      },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then((user) => {
+        document.getElementById("first-name").value = user.first_name || "";
+        document.getElementById("last-name").value = user.last_name || "";
+        document.getElementById("email").value = user.email || "";
+        document.getElementById("phone").value = user.phone || "";
+        document.getElementById("dob").value = user.dob
+          ? user.dob.substring(0, 10)
+          : "";
+        document.getElementById("gender").value = user.gender || "M";
+        document.getElementById("role").value = user.role || "USER";
+
+        document.getElementById("password-fields").style.display = "none";
+
+        form.setAttribute("hx-put", `/api/v1/user/update/${userId}`);
+      })
+      .catch((error) => {
+        console.error("Error fetching user:", error);
+        document.getElementById("form-result").innerHTML =
+          '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">Error loading user data</div>';
+      });
+  } else {
+    form.setAttribute("hx-post", "/api/v1/user/create");
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+
+    if (form.checkValidity()) {
+      const formData = new FormData(form);
+      const jsonData = {};
+
+      formData.forEach((value, key) => {
+        if (value) {
+          jsonData[key] = value;
+        }
+      });
+
+      if (!userId) {
+        delete jsonData.id;
+      }
+
+      fetch(form.getAttribute(userId ? "hx-put" : "hx-post"), {
+        method: userId ? "PUT" : "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + localStorage.getItem("access_token"),
+        },
+        body: JSON.stringify(jsonData),
+      })
+        .then((response) => {
+          if (!response.ok) {
+            return response.json().then((data) => {
+              throw new Error(data.detail || "Error saving user");
+            });
+          }
+          return response.json();
+        })
+        .then((data) => {
+          document.getElementById("form-result").innerHTML =
+            '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">User saved successfully</div>';
+
+          setTimeout(() => {
+            closeModal();
+            loadUsers(currentPage);
+          }, 1000);
+        })
+        .catch((error) => {
+          console.error("Error saving user:", error);
+          document.getElementById(
+            "form-result"
+          ).innerHTML = `<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">${error.message}</div>`;
+        });
+    } else {
+      form.reportValidity();
+    }
+  });
+
+  function closeModal() {
+    document.querySelector("#user-modal-container").innerHTML = "";
+  }
+</script>
