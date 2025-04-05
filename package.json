@@ -1,0 +1,14 @@
+{
+  "name": "artist-management-system",
+  "version": "1.0.0",
+  "description": "Artist Management System",
+  "scripts": {
+    "build:css": "tailwindcss -i ./static/src/input.css -o ./static/dist/output.css --minify",
+    "watch:css": "tailwindcss -i ./static/src/input.css -o ./static/dist/output.css --watch"
+  },
+  "devDependencies": {
+    "tailwindcss": "^3.3.0",
+    "autoprefixer": "^10.4.14",
+    "postcss": "^8.4.21"
+  }
+}

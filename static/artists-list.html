@@ -63,7 +63,7 @@
 <div id="artist-modal-container"></div>
 
 <script>
-  let currentPage = 1;
+  let artistsCurrentPage = 1;
   let totalPages = 1;
   let pageSize = 10;
   let totalItems = 0;
@@ -85,16 +85,16 @@
         return response.json();
       })
       .then((data) => {
-        currentPage = data.page;
+        artistsCurrentPage = data.page;
         totalItems = data.total;
         totalPages = Math.ceil(totalItems / pageSize);
 
-        document.getElementById("current-page").textContent = currentPage;
+        document.getElementById("current-page").textContent = artistsCurrentPage;
         document.getElementById("total-pages").textContent = totalPages;
 
-        document.getElementById("prev-page").disabled = currentPage <= 1;
+        document.getElementById("prev-page").disabled = artistsCurrentPage <= 1;
         document.getElementById("next-page").disabled =
-          currentPage >= totalPages;
+          artistsCurrentPage >= totalPages;
 
         artistsTableBody.innerHTML = "";
 
@@ -155,7 +155,7 @@
           if (!response.ok) {
             throw new Error("Network response was not ok");
           }
-          loadArtists(currentPage);
+          loadArtists(artistsCurrentPage);
         })
         .catch((error) => {
           console.error("Error deleting artist:", error);
@@ -167,14 +167,14 @@
   loadArtists();
 
   document.getElementById("prev-page").addEventListener("click", () => {
-    if (currentPage > 1) {
-      loadArtists(currentPage - 1);
+    if (artistsCurrentPage > 1) {
+      loadArtists(artistsCurrentPage - 1);
     }
   });
 
   document.getElementById("next-page").addEventListener("click", () => {
-    if (currentPage < totalPages) {
-      loadArtists(currentPage + 1);
+    if (artistsCurrentPage < totalPages) {
+      loadArtists(artistsCurrentPage + 1);
     }
   });
 </script>
