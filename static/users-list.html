@@ -63,121 +63,123 @@
 <div id="user-modal-container"></div>
 
 <script>
-  let currentPage = 1;
-  let totalPages = 1;
-  let pageSize = 10;
-  let totalItems = 0;
+  (function() {
+    let usersCurrentPage = 1;
+    let usersTotalPages = 1;
+    let usersPageSize = 10;
+    let usersTotalItems = 0;
 
-  function loadUsers(page = 1) {
-    const usersTableBody = document.getElementById("users-table-body");
-    usersTableBody.innerHTML =
-      '<tr><td colspan="6" class="py-4 text-center">Loading users...</td></tr>';
+    function loadUsers(page = 1) {
+      const usersTableBody = document.getElementById("users-table-body");
+      usersTableBody.innerHTML =
+        '<tr><td colspan="6" class="py-4 text-center">Loading users...</td></tr>';
 
-    fetch(`/api/v1/user?page=${page}&page_size=${pageSize}`, {
-      headers: {
-        Authorization: "Bearer " + localStorage.getItem("access_token"),
-      },
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return response.json();
-      })
-      .then((data) => {
-        currentPage = data.page;
-        totalItems = data.total;
-        totalPages = Math.ceil(totalItems / pageSize);
-
-        document.getElementById("current-page").textContent = currentPage;
-        document.getElementById("total-pages").textContent = totalPages;
-
-        document.getElementById("prev-page").disabled = currentPage <= 1;
-        document.getElementById("next-page").disabled =
-          currentPage >= totalPages;
-
-        usersTableBody.innerHTML = "";
-
-        data.results.forEach((user) => {
-          const row = document.createElement("tr");
-          row.className = "hover:bg-gray-50";
-          row.innerHTML = `
-            <td class="py-2 px-4 border-b">${user.id}</td>
-            <td class="py-2 px-4 border-b">${user.first_name} ${
-            user.last_name
-          }</td>
-            <td class="py-2 px-4 border-b">${user.email}</td>
-            <td class="py-2 px-4 border-b">${user.phone || "-"}</td>
-            <td class="py-2 px-4 border-b">${user.gender || "-"}</td>
-            <td class="py-2 px-4 border-b space-x-2">
-              <button
-                class="text-blue-500 hover:text-blue-700"
-                hx-get="user-form.html?id=${user.id}"
-                hx-target="#user-modal-container"
-                hx-swap="innerHTML">
-                Edit
-              </button>
-              <button
-                class="text-red-500 hover:text-red-700"
-                onclick="deleteUser(${user.id})">
-                Delete
-              </button>
-            </td>
-          `;
-          usersTableBody.appendChild(row);
-        });
-      })
-      .catch((error) => {
-        console.error("Error loading users:", error);
-        usersTableBody.innerHTML =
-          '<tr><td colspan="6" class="py-4 text-center text-red-500">Error loading users</td></tr>';
-      });
-  }
-
-  function deleteUser(userId) {
-    if (confirm("Are you sure you want to delete this user?")) {
-      const token = localStorage.getItem("access_token");
-      if (!token) {
-        alert("Authorization token is missing. Please log in again.");
-        return;
-      }
-
-      const url = `http://localhost:8000/api/v1/user/delete/${userId}`;
-      const headers = {
-        Accept: "*/*",
-        Authorization: `Bearer ${token}`,
-      };
-
-      fetch(url, {
-        method: "DELETE",
-        headers: headers,
+      fetch(`/api/v1/user?page=${page}&page_size=${usersPageSize}`, {
+        headers: {
+          Authorization: "Bearer " + localStorage.getItem("access_token"),
+        },
       })
         .then((response) => {
           if (!response.ok) {
-            return response.json().then((data) => {
-              throw new Error(data.detail || "Failed to delete user");
-            });
+            throw new Error("Network response was not ok");
           }
-          loadUsers(currentPage);
+          return response.json();
+        })
+        .then((data) => {
+          usersCurrentPage = data.page;
+          usersTotalItems = data.total;
+          usersTotalPages = Math.ceil(usersTotalItems / usersPageSize);
+
+          document.getElementById("current-page").textContent = usersCurrentPage;
+          document.getElementById("total-pages").textContent = usersTotalPages;
+
+          document.getElementById("prev-page").disabled = usersCurrentPage <= 1;
+          document.getElementById("next-page").disabled =
+            usersCurrentPage >= usersTotalPages;
+
+          usersTableBody.innerHTML = "";
+
+          data.results.forEach((user) => {
+            const row = document.createElement("tr");
+            row.className = "hover:bg-gray-50";
+            row.innerHTML = `
+              <td class="py-2 px-4 border-b">${user.id}</td>
+              <td class="py-2 px-4 border-b">${user.first_name} ${
+              user.last_name
+            }</td>
+              <td class="py-2 px-4 border-b">${user.email}</td>
+              <td class="py-2 px-4 border-b">${user.phone || "-"}</td>
+              <td class="py-2 px-4 border-b">${user.gender || "-"}</td>
+              <td class="py-2 px-4 border-b space-x-2">
+                <button
+                  class="text-blue-500 hover:text-blue-700"
+                  hx-get="user-form.html?id=${user.id}"
+                  hx-target="#user-modal-container"
+                  hx-swap="innerHTML">
+                  Edit
+                </button>
+                <button
+                  class="text-red-500 hover:text-red-700"
+                  onclick="deleteUser(${user.id})">
+                  Delete
+                </button>
+              </td>
+            `;
+            usersTableBody.appendChild(row);
+          });
         })
         .catch((error) => {
-          console.error("Error deleting user:", error);
-          alert(error.message || "Failed to delete user");
+          console.error("Error loading users:", error);
+          usersTableBody.innerHTML =
+            '<tr><td colspan="6" class="py-4 text-center text-red-500">Error loading users</td></tr>';
         });
     }
-  }
 
-  loadUsers();
+    function deleteUser(userId) {
+      if (confirm("Are you sure you want to delete this user?")) {
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          alert("Authorization token is missing. Please log in again.");
+          return;
+        }
 
-  document.getElementById("prev-page").addEventListener("click", () => {
-    if (currentPage > 1) {
-      loadUsers(currentPage - 1);
+        const url = `http://localhost:8000/api/v1/user/delete/${userId}`;
+        const headers = {
+          Accept: "*/*",
+          Authorization: `Bearer ${token}`,
+        };
+
+        fetch(url, {
+          method: "DELETE",
+          headers: headers,
+        })
+          .then((response) => {
+            if (!response.ok) {
+              return response.json().then((data) => {
+                throw new Error(data.detail || "Failed to delete user");
+              });
+            }
+            loadUsers(usersCurrentPage);
+          })
+          .catch((error) => {
+            console.error("Error deleting user:", error);
+            alert(error.message || "Failed to delete user");
+          });
+      }
     }
-  });
 
-  document.getElementById("next-page").addEventListener("click", () => {
-    if (currentPage < totalPages) {
-      loadUsers(currentPage + 1);
-    }
-  });
+    loadUsers();
+
+    document.getElementById("prev-page").addEventListener("click", () => {
+      if (usersCurrentPage > 1) {
+        loadUsers(usersCurrentPage - 1);
+      }
+    });
+
+    document.getElementById("next-page").addEventListener("click", () => {
+      if (usersCurrentPage < usersTotalPages) {
+        loadUsers(usersCurrentPage + 1);
+      }
+    });
+  })();
 </script>
