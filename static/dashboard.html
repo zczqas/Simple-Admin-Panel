@@ -53,7 +53,9 @@
         });
 
         const contentUrl =
-          tabId === "artists-tab" ? "artists-list.html" : "users-list.html";
+          tabId === "artists-tab"
+            ? "artists-list.html?v=" + new Date().getTime()
+            : "users-list.html?v=" + new Date().getTime();
         htmx.ajax("GET", contentUrl, {
           target: "#tab-content",
           swap: "innerHTML",
@@ -125,6 +127,13 @@
           event.detail.headers["Authorization"] = "Bearer " + accessToken;
         }
       });
+
+      function closeModal() {
+        const modal = document.querySelector(".fixed");
+        if (modal) {
+          modal.remove();
+        }
+      }
     </script>
   </body>
 </html>

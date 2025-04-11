@@ -9,7 +9,7 @@
       </button>
     </div>
 
-    <form id="artist-form" hx-swap="outerHTML">
+    <form id="artist-form" hx-swap="outerHTML" onsubmit="submitForm(event)">
       <input type="hidden" id="artist-id" name="id" value="" />
 
       <div class="mb-4">
@@ -25,40 +25,33 @@
         />
       </div>
 
-      <div class="grid grid-cols-2 gap-4 mb-4">
-        <div>
-          <label
-            class="block text-gray-700 text-sm font-bold mb-2"
-            for="gender"
-          >
-            Gender
-          </label>
-          <select
-            class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="gender"
-            name="gender"
-          >
-            <option value="M">Male</option>
-            <option value="F">Female</option>
-            <option value="O">Other</option>
-          </select>
-        </div>
-        <div>
-          <label
-            class="block text-gray-700 text-sm font-bold mb-2"
-            for="first-release-year"
-          >
-            First Release Year
-          </label>
-          <input
-            class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            id="first-release-year"
-            name="first_release_year"
-            type="number"
-            min="1900"
-            max="2100"
-          />
-        </div>
+      <div class="mb-4">
+        <label class="block text-gray-700 text-sm font-bold mb-2" for="dob">
+          Date of Birth
+        </label>
+        <input
+          class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          id="dob"
+          name="dob"
+          type="date"
+          required
+        />
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-gray-700 text-sm font-bold mb-2" for="gender">
+          Gender
+        </label>
+        <select
+          class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          id="gender"
+          name="gender"
+          required
+        >
+          <option value="M">Male</option>
+          <option value="F">Female</option>
+          <option value="O">Other</option>
+        </select>
       </div>
 
       <div class="mb-4">
@@ -70,18 +63,40 @@
           id="address"
           name="address"
           type="text"
+          required
         />
       </div>
 
       <div class="mb-4">
-        <label class="block text-gray-700 text-sm font-bold mb-2" for="dob">
-          Date of Birth
+        <label
+          class="block text-gray-700 text-sm font-bold mb-2"
+          for="first_release_year"
+        >
+          First Release Year
         </label>
         <input
           class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-          id="dob"
-          name="dob"
-          type="date"
+          id="first_release_year"
+          name="first_release_year"
+          type="text"
+          required
+        />
+      </div>
+
+      <div class="mb-4">
+        <label
+          class="block text-gray-700 text-sm font-bold mb-2"
+          for="no_of_albums_released"
+        >
+          Number of Albums Released
+        </label>
+        <input
+          class="appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+          id="no_of_albums_released"
+          name="no_of_albums_released"
+          type="number"
+          min="0"
+          required
         />
       </div>
 
@@ -130,13 +145,15 @@
       })
       .then((artist) => {
         document.getElementById("name").value = artist.name || "";
-        document.getElementById("gender").value = artist.gender || "M";
-        document.getElementById("first-release-year").value =
-          artist.first_release_year || "";
-        document.getElementById("address").value = artist.address || "";
         document.getElementById("dob").value = artist.dob
           ? artist.dob.substring(0, 10)
           : "";
+        document.getElementById("gender").value = artist.gender || "M";
+        document.getElementById("address").value = artist.address || "";
+        document.getElementById("first_release_year").value =
+          artist.first_release_year || "";
+        document.getElementById("no_of_albums_released").value =
+          artist.no_of_albums_released || 0;
 
         form.setAttribute("hx-put", `/api/v1/artist/update/${artistId}`);
       })
@@ -149,7 +166,7 @@
     form.setAttribute("hx-post", "/api/v1/artist/create");
   }
 
-  form.addEventListener("submit", function (e) {
+  function submitForm(e) {
     e.preventDefault();
 
     if (form.checkValidity()) {
@@ -157,18 +174,14 @@
       const jsonData = {};
 
       formData.forEach((value, key) => {
-        if (value) {
-          if (key === "first_release_year") {
+        if (value && key !== "id") {
+          if (key === "no_of_albums_released") {
             jsonData[key] = parseInt(value);
           } else {
             jsonData[key] = value;
           }
         }
       });
-
-      if (!artistId) {
-        delete jsonData.id;
-      }
 
       fetch(form.getAttribute(artistId ? "hx-put" : "hx-post"), {
         method: artistId ? "PUT" : "POST",
@@ -187,13 +200,15 @@
           return response.json();
         })
         .then((data) => {
-          document.getElementById("form-result").innerHTML =
-            '<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative">Artist saved successfully</div>';
-
-          setTimeout(() => {
-            htmx.trigger("#artists-table-body", "load");
-            closeModal();
-          }, 1000);
+          const artistsTableBody =
+            document.getElementById("artists-table-body");
+          if (artistsTableBody) {
+            htmx.ajax("GET", "/api/v1/artist", {
+              target: "#artists-table-body",
+              swap: "innerHTML",
+            });
+          }
+          closeModal();
         })
         .catch((error) => {
           console.error("Error saving artist:", error);
@@ -202,7 +217,7 @@
           ).innerHTML = `<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">${error.message}</div>`;
         });
     }
-  });
+  }
 
   function closeModal() {
     const modal = document.querySelector(".fixed");

@@ -17,21 +17,25 @@
         <tr>
           <th class="py-2 px-4 text-left border-b">ID</th>
           <th class="py-2 px-4 text-left border-b">Name</th>
-          <th class="py-2 px-4 text-left border-b">Genre</th>
-          <th class="py-2 px-4 text-left border-b">Country</th>
-          <th class="py-2 px-4 text-left border-b">Formed Year</th>
+          <th class="py-2 px-4 text-left border-b">Gender</th>
+          <th class="py-2 px-4 text-left border-b">Date of Birth</th>
+          <th class="py-2 px-4 text-left border-b">First Release Year</th>
+          <th class="py-2 px-4 text-left border-b">Albums Released</th>
           <th class="py-2 px-4 text-left border-b">Actions</th>
         </tr>
       </thead>
       <tbody
         id="artists-table-body"
-        hx-get="/api/v1/artist"
+        hx-get="/api/v1/artist?v="
+        +
+        new
+        Date().getTime()
         hx-trigger="load"
         hx-swap="innerHTML"
         hx-headers='{"Authorization": "Bearer " + localStorage.getItem("access_token")}'
       >
         <tr>
-          <td colspan="6" class="py-4 text-center">Loading artists...</td>
+          <td colspan="7" class="py-4 text-center">Loading artists...</td>
         </tr>
       </tbody>
     </table>
@@ -48,7 +52,10 @@
       <button
         id="prev-page"
         class="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
-        hx-get="/api/v1/artist"
+        hx-get="/api/v1/artist?v="
+        +
+        new
+        Date().getTime()
         hx-trigger="click"
         hx-target="#artists-table-body"
         hx-swap="innerHTML"
@@ -59,7 +66,10 @@
       <button
         id="next-page"
         class="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
-        hx-get="/api/v1/artist"
+        hx-get="/api/v1/artist?v="
+        +
+        new
+        Date().getTime()
         hx-trigger="click"
         hx-target="#artists-table-body"
         hx-swap="innerHTML"
@@ -81,19 +91,34 @@
 
         if (!data || !data.results) {
           evt.detail.target.innerHTML =
-            '<tr><td colspan="6" class="py-4 text-center text-red-500">No artists found or invalid data format</td></tr>';
+            '<tr><td colspan="7" class="py-4 text-center text-red-500">No artists found or invalid data format</td></tr>';
           return;
         }
 
         let html = "";
         data.results.forEach((artist) => {
+          const dob = artist.dob
+            ? new Date(artist.dob).toLocaleDateString()
+            : "-";
+
+          // Format gender
+          let genderDisplay = "-";
+          if (artist.gender === "M") genderDisplay = "Male";
+          else if (artist.gender === "F") genderDisplay = "Female";
+          else if (artist.gender === "O") genderDisplay = "Other";
+
           html += `
             <tr>
               <td class="py-2 px-4 border-b">${artist.id}</td>
-              <td class="py-2 px-4 border-b">${artist.name}</td>
-              <td class="py-2 px-4 border-b">${artist.genre || "-"}</td>
-              <td class="py-2 px-4 border-b">${artist.country || "-"}</td>
-              <td class="py-2 px-4 border-b">${artist.formed_year || "-"}</td>
+              <td class="py-2 px-4 border-b">${artist.name || "-"}</td>
+              <td class="py-2 px-4 border-b">${genderDisplay}</td>
+              <td class="py-2 px-4 border-b">${dob}</td>
+              <td class="py-2 px-4 border-b">${
+                artist.first_release_year || "-"
+              }</td>
+              <td class="py-2 px-4 border-b">${
+                artist.no_of_albums_released || "0"
+              }</td>
               <td class="py-2 px-4 border-b space-x-2">
                 <button
                   class="text-blue-500 hover:text-blue-700"
@@ -107,7 +132,7 @@
                   hx-get="albums-list.html?artist_id=${artist.id}"
                   hx-target="#tab-content"
                   hx-swap="innerHTML">
-                  Albums
+                  Songs
                 </button>
                 <button
                   class="text-red-500 hover:text-red-700"
@@ -131,7 +156,7 @@
       } catch (error) {
         console.error("Error processing artists data:", error);
         evt.detail.target.innerHTML =
-          '<tr><td colspan="6" class="py-4 text-center text-red-500">Failed to load artists</td></tr>';
+          '<tr><td colspan="7" class="py-4 text-center text-red-500">Failed to load artists</td></tr>';
       }
     }
   });
@@ -144,7 +169,7 @@
         return;
       }
 
-      fetch(`http://localhost:8000/api/v1/artist/delete/${artistId}`, {
+      fetch(`http://localhost:8000/api/v1/artist/${artistId}`, {
         method: "DELETE",
         headers: {
           Accept: "*/*",
@@ -157,7 +182,10 @@
               throw new Error(data.detail || "Failed to delete artist");
             });
           }
-          htmx.trigger("#artists-table-body", "load");
+          htmx.ajax("GET", "/api/v1/artist", {
+            target: "#artists-table-body",
+            swap: "innerHTML",
+          });
         })
         .catch((error) => {
           console.error("Error deleting artist:", error);
