@@ -5,7 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Artist Management System - Dashboard</title>
     <script src="https://unpkg.com/htmx.org@2.0.4"></script>
-    <link href="dist/output.css" rel="stylesheet">
+    <link href="dist/output.css" rel="stylesheet" />
+    <style>
+      .tab-content {
+        display: none;
+      }
+      .tab-content.active {
+        display: block;
+      }
+    </style>
     <script>
       document.addEventListener("DOMContentLoaded", function () {
         const accessToken = localStorage.getItem("access_token");
@@ -19,19 +27,44 @@
           document.getElementById("user-name").textContent = userName;
         }
 
-        htmx.ajax("GET", "users-list.html", { target: "#tab-content" });
+        // Check URL parameters for the active tab
+        const urlParams = new URLSearchParams(window.location.search);
+        const tabParam = urlParams.get("tab");
 
-        setActiveTab("users-tab");
+        // Set initial active tab and load content
+        if (tabParam === "artists") {
+          switchTab("artists-tab");
+        } else {
+          switchTab("users-tab");
+        }
       });
 
-      function setActiveTab(tabId) {
+      // Function to handle tab switching
+      function switchTab(tabId) {
+        // Update tab buttons
         document.querySelectorAll(".tab").forEach((tab) => {
-          tab.classList.remove("bg-blue-600");
-          tab.classList.add("bg-blue-500");
+          if (tab.id === tabId) {
+            tab.classList.remove("bg-blue-500");
+            tab.classList.add("bg-blue-600");
+          } else {
+            tab.classList.remove("bg-blue-600");
+            tab.classList.add("bg-blue-500");
+          }
         });
 
-        document.getElementById(tabId).classList.remove("bg-blue-500");
-        document.getElementById(tabId).classList.add("bg-blue-600");
+        const contentUrl =
+          tabId === "artists-tab" ? "artists-list.html" : "users-list.html";
+        htmx.ajax("GET", contentUrl, {
+          target: "#tab-content",
+          swap: "innerHTML",
+        });
+
+        const newUrl = new URL(window.location);
+        newUrl.searchParams.set(
+          "tab",
+          tabId === "artists-tab" ? "artists" : "users"
+        );
+        window.history.pushState({}, "", newUrl);
       }
 
       function logout() {
@@ -68,26 +101,20 @@
         <div class="flex border-b border-gray-200">
           <button
             id="users-tab"
-            class="tab px-6 py-3 bg-blue-500 text-white font-medium"
-            hx-get="users-list.html"
-            hx-target="#tab-content"
-            onclick="setActiveTab('users-tab')"
+            class="tab px-6 py-3 bg-blue-600 text-white font-medium"
+            onclick="switchTab('users-tab')"
           >
             Users
           </button>
           <button
             id="artists-tab"
             class="tab px-6 py-3 bg-blue-500 text-white font-medium"
-            hx-get="artists-list.html"
-            hx-target="#tab-content"
-            onclick="setActiveTab('artists-tab')"
+            onclick="switchTab('artists-tab')"
           >
             Artists
           </button>
         </div>
-        <div id="tab-content" class="p-6">
-          <!-- Tab content will be loaded here -->
-        </div>
+        <div id="tab-content" class="p-6"></div>
       </div>
     </div>
 
@@ -96,12 +123,6 @@
         const accessToken = localStorage.getItem("access_token");
         if (accessToken) {
           event.detail.headers["Authorization"] = "Bearer " + accessToken;
-        }
-      });
-
-      document.body.addEventListener("htmx:responseError", function (event) {
-        if (event.detail.xhr.status === 401) {
-          logout();
         }
       });
     </script>

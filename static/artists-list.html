@@ -17,9 +17,9 @@
         <tr>
           <th class="py-2 px-4 text-left border-b">ID</th>
           <th class="py-2 px-4 text-left border-b">Name</th>
-          <th class="py-2 px-4 text-left border-b">Gender</th>
-          <th class="py-2 px-4 text-left border-b">First Release</th>
-          <th class="py-2 px-4 text-left border-b">Albums</th>
+          <th class="py-2 px-4 text-left border-b">Genre</th>
+          <th class="py-2 px-4 text-left border-b">Country</th>
+          <th class="py-2 px-4 text-left border-b">Formed Year</th>
           <th class="py-2 px-4 text-left border-b">Actions</th>
         </tr>
       </thead>
@@ -28,6 +28,7 @@
         hx-get="/api/v1/artist"
         hx-trigger="load"
         hx-swap="innerHTML"
+        hx-headers='{"Authorization": "Bearer " + localStorage.getItem("access_token")}'
       >
         <tr>
           <td colspan="6" class="py-4 text-center">Loading artists...</td>
@@ -47,12 +48,22 @@
       <button
         id="prev-page"
         class="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+        hx-get="/api/v1/artist"
+        hx-trigger="click"
+        hx-target="#artists-table-body"
+        hx-swap="innerHTML"
+        hx-include="[name='page']"
       >
         Previous
       </button>
       <button
         id="next-page"
         class="px-3 py-1 bg-gray-200 rounded disabled:opacity-50"
+        hx-get="/api/v1/artist"
+        hx-trigger="click"
+        hx-target="#artists-table-body"
+        hx-swap="innerHTML"
+        hx-include="[name='page']"
       >
         Next
       </button>
@@ -63,120 +74,95 @@
 <div id="artist-modal-container"></div>
 
 <script>
-  (function() {
-    let artistsCurrentPage = 1;
-    let artistsTotalPages = 1;
-    let artistsPageSize = 10;
-    let artistsTotalItems = 0;
+  htmx.on("htmx:afterRequest", function (evt) {
+    if (evt.detail.target.id === "artists-table-body") {
+      try {
+        const data = JSON.parse(evt.detail.xhr.responseText);
 
-    function loadArtists(page = 1) {
-      const artistsTableBody = document.getElementById("artists-table-body");
-      artistsTableBody.innerHTML =
-        '<tr><td colspan="6" class="py-4 text-center">Loading artists...</td></tr>';
+        if (!data || !data.results) {
+          evt.detail.target.innerHTML =
+            '<tr><td colspan="6" class="py-4 text-center text-red-500">No artists found or invalid data format</td></tr>';
+          return;
+        }
 
-      fetch(`/api/v1/artist?page=${page}&page_size=${artistsPageSize}`, {
-        headers: {
-          Authorization: "Bearer " + localStorage.getItem("access_token"),
-        },
-      })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error("Network response was not ok");
-          }
-          return response.json();
-        })
-        .then((data) => {
-          artistsCurrentPage = data.page;
-          artistsTotalItems = data.total;
-          artistsTotalPages = Math.ceil(artistsTotalItems / artistsPageSize);
-
-          document.getElementById("current-page").textContent = artistsCurrentPage;
-          document.getElementById("total-pages").textContent = artistsTotalPages;
-
-          document.getElementById("prev-page").disabled = artistsCurrentPage <= 1;
-          document.getElementById("next-page").disabled =
-            artistsCurrentPage >= artistsTotalPages;
-
-          artistsTableBody.innerHTML = "";
-
-          data.results.forEach((artist) => {
-            const row = document.createElement("tr");
-            row.className = "hover:bg-gray-50";
-            row.innerHTML = `
+        let html = "";
+        data.results.forEach((artist) => {
+          html += `
+            <tr>
               <td class="py-2 px-4 border-b">${artist.id}</td>
               <td class="py-2 px-4 border-b">${artist.name}</td>
-              <td class="py-2 px-4 border-b">${artist.gender || "-"}</td>
-              <td class="py-2 px-4 border-b">${
-                artist.first_release_year || "-"
-              }</td>
-              <td class="py-2 px-4 border-b">${
-                artist.no_of_albums_released || "0"
-              }</td>
+              <td class="py-2 px-4 border-b">${artist.genre || "-"}</td>
+              <td class="py-2 px-4 border-b">${artist.country || "-"}</td>
+              <td class="py-2 px-4 border-b">${artist.formed_year || "-"}</td>
               <td class="py-2 px-4 border-b space-x-2">
-                <button 
-                  class="text-blue-500 hover:text-blue-700" 
-                  hx-get="artist-form.html?id=${artist.id}" 
+                <button
+                  class="text-blue-500 hover:text-blue-700"
+                  hx-get="artist-form.html?id=${artist.id}"
                   hx-target="#artist-modal-container"
                   hx-swap="innerHTML">
                   Edit
                 </button>
-                <button 
-                  class="text-green-500 hover:text-green-700" 
-                  hx-get="songs-list.html?artist_id=${artist.id}" 
+                <button
+                  class="text-green-500 hover:text-green-700"
+                  hx-get="albums-list.html?artist_id=${artist.id}"
                   hx-target="#tab-content"
                   hx-swap="innerHTML">
-                  Songs
+                  Albums
                 </button>
-                <button 
-                  class="text-red-500 hover:text-red-700" 
+                <button
+                  class="text-red-500 hover:text-red-700"
                   onclick="deleteArtist(${artist.id})">
                   Delete
                 </button>
               </td>
-            `;
-            artistsTableBody.appendChild(row);
-          });
+            </tr>
+          `;
+        });
+
+        evt.detail.target.innerHTML = html;
+
+        document.getElementById("current-page").textContent = data.page;
+        document.getElementById("total-pages").textContent = Math.ceil(
+          data.total / 10
+        );
+        document.getElementById("prev-page").disabled = data.page <= 1;
+        document.getElementById("next-page").disabled =
+          data.page >= Math.ceil(data.total / 10);
+      } catch (error) {
+        console.error("Error processing artists data:", error);
+        evt.detail.target.innerHTML =
+          '<tr><td colspan="6" class="py-4 text-center text-red-500">Failed to load artists</td></tr>';
+      }
+    }
+  });
+
+  function deleteArtist(artistId) {
+    if (confirm("Are you sure you want to delete this artist?")) {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        alert("Authorization token is missing. Please log in again.");
+        return;
+      }
+
+      fetch(`http://localhost:8000/api/v1/artist/delete/${artistId}`, {
+        method: "DELETE",
+        headers: {
+          Accept: "*/*",
+          Authorization: `Bearer ${token}`,
+        },
+      })
+        .then((response) => {
+          if (!response.ok) {
+            return response.json().then((data) => {
+              throw new Error(data.detail || "Failed to delete artist");
+            });
+          }
+          htmx.trigger("#artists-table-body", "load");
         })
         .catch((error) => {
-          console.error("Error loading artists:", error);
-          artistsTableBody.innerHTML =
-            '<tr><td colspan="6" class="py-4 text-center text-red-500">Error loading artists</td></tr>';
+          console.error("Error deleting artist:", error);
+          alert(error.message || "Failed to delete artist");
         });
     }
-
-    function deleteArtist(artistId) {
-      if (confirm("Are you sure you want to delete this artist?")) {
-        fetch(`/api/v1/artist/${artistId}`, {
-          method: "DELETE",
-          headers: {
-            Authorization: "Bearer " + localStorage.getItem("access_token"),
-          },
-        })
-          .then((response) => {
-            if (!response.ok) {
-              throw new Error("Network response was not ok");
-            }
-            loadArtists(artistsCurrentPage);
-          })
-          .catch((error) => {
-            console.error("Error deleting artist:", error);
-            alert("Failed to delete artist");
-          });
-      }
-    }
-
-    loadArtists();
-
-    document.getElementById("prev-page").addEventListener("click", () => {
-      if (artistsCurrentPage > 1) {
-        loadArtists(artistsCurrentPage - 1);
-      }
-    });
-
-    document.getElementById("next-page").addEventListener("click", () => {
-      if (artistsCurrentPage < artistsTotalPages) {
-        loadArtists(artistsCurrentPage + 1);
-      }
-    });
-  })();
+  }
 </script>
