@@ -129,9 +129,9 @@
                 </button>
                 <button
                   class="text-green-500 hover:text-green-700"
-                  hx-get="albums-list.html?artist_id=${artist.id}"
-                  hx-target="#tab-content"
-                  hx-swap="innerHTML">
+                  onclick="window.location.href='songs-list.html?artist_id=${
+                    artist.id
+                  }'">
                   Songs
                 </button>
                 <button
