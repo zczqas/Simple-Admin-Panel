@@ -11,7 +11,9 @@ from app.core.schema.music import (
 router = APIRouter(prefix="/music", tags=["music"])
 
 
-@router.get("/{artist_id}", response_model=PaginatedResponse[MusicResponseSchema])
+@router.get(
+    "/artist/{artist_id}", response_model=PaginatedResponse[MusicResponseSchema]
+)
 def get_music_by_artist(artist_id: int, page: int = 1, page_size: int = 10):
     if page < 1 or page_size < 1:
         raise HTTPException(
