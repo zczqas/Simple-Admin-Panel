@@ -11,6 +11,18 @@ A modern web application for managing artists, built with FastAPI, PostgreSQL, a
 - Database migrations with Alembic
 - Authentication and authorization system
 
+## Screenshots
+
+<div align="center">
+  <img src="./screenshots/users-list.png" alt="Users List" width="800"/>
+  <p><em>Users Management</em></p>
+  
+  <img src="./screenshots/artists-list.png" alt="Artist Management" width="800"/>
+  <p><em>Artists Management</em></p>
+
+  <p>View more screenshots in the <a href="./screenshots">screenshots directory</a>.</p>
+</div>
+
 ## Tech Stack
 
 - **Backend**: FastAPI, Alembic (Database Migration)
@@ -30,18 +42,21 @@ A modern web application for managing artists, built with FastAPI, PostgreSQL, a
 ## Getting Started
 
 1. Clone the repository:
+
    ```bash
    git clone https://github.com/zczqas/Simple-Admin-Panel.git
    cd simple-admin-panel
    ```
 
 2. Set up environment variables:
+
    ```bash
    cp .env.example .env
    # Edit .env with your configuration
    ```
 
 3. Start the application using Docker Compose:
+
    ```bash
    make dev
    ```
@@ -49,6 +64,7 @@ A modern web application for managing artists, built with FastAPI, PostgreSQL, a
 4. For local development:
 
    a. Set up Python virtual environment:
+
    ```bash
    python -m venv .venv
    source .venv/bin/activate  # On Windows: .venv\Scripts\activate
@@ -56,25 +72,31 @@ A modern web application for managing artists, built with FastAPI, PostgreSQL, a
    ```
 
    b. Install Node.js dependencies:
+
    ```bash
    npm install
    ```
 
    c. Build CSS:
+
    ```bash
    npm run build:css
    ```
 
    d. Start the development server:
+
    ```bash
    make dev
    ```
 
    e. Start the development server and view logs:
+
    ```bash
    make dev-live
    ```
-   or 
+
+   or
+
    ```bash
    make dev
 
@@ -83,7 +105,7 @@ A modern web application for managing artists, built with FastAPI, PostgreSQL, a
 
 ## Project Structure
 
-```
+```text
 simple-admin-panel/
 ├── app/                    # Main application code
 ├── static/                 # Static files and CSS
@@ -100,11 +122,13 @@ simple-admin-panel/
 ## Development
 
 - Watch CSS changes:
+
   ```bash
   npm run watch:css
   ```
 
 - Run database migrations:
+
   ```bash
   alembic revision -m "migration message"
 
@@ -112,6 +136,7 @@ simple-admin-panel/
   ```
 
 - Run tests:
+
   ```bash
   make test test=test_file_name
   ```
@@ -119,7 +144,7 @@ simple-admin-panel/
 ## API Documentation
 
 Once the application is running, you can access:
+
 - Swagger UI: http://localhost:8000/docs
 - ReDoc: http://localhost:8000/redoc
 - Frontend: http://localhost:8000/static/
-
