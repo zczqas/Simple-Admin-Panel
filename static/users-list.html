@@ -99,9 +99,7 @@
               <td class="py-2 px-4 border-b space-x-2">
                 <button
                   class="text-blue-500 hover:text-blue-700"
-                  hx-get="user-form.html?id=${user.id}"
-                  hx-target="#user-modal-container"
-                  hx-swap="innerHTML">
+                  onclick="openEditModal(${user.id})">
                   Edit
                 </button>
                 <button
@@ -158,6 +156,40 @@
           console.error("Error deleting user:", error);
           alert(error.message || "Failed to delete user");
         });
+    }
+  }
+
+  async function openEditModal(userId) {
+    try {
+      const userResponse = await fetch(`/api/v1/user/${userId}`, {
+        headers: {
+          Authorization: "Bearer " + localStorage.getItem("access_token"),
+        },
+      });
+
+      if (!userResponse.ok) {
+        throw new Error("Failed to fetch user details");
+      }
+
+      const userData = await userResponse.json();
+
+      const formResponse = await fetch("edit-user.html");
+      const html = await formResponse.text();
+      document.getElementById("user-modal-container").innerHTML = html;
+
+      document.getElementById("user-id").value = userId;
+      document.getElementById("first-name").value = userData.first_name || "";
+      document.getElementById("last-name").value = userData.last_name || "";
+      document.getElementById("email").value = userData.email || "";
+      document.getElementById("phone").value = userData.phone || "";
+      document.getElementById("dob").value = userData.dob
+        ? userData.dob.substring(0, 10)
+        : "";
+      document.getElementById("gender").value = userData.gender || "M";
+      document.getElementById("role").value = userData.role || "USER";
+    } catch (error) {
+      console.error("Error in edit modal:", error);
+      alert("Failed to load edit form");
     }
   }
 </script>

@@ -141,10 +141,12 @@ def update_user(
     if "gender" in user_data and hasattr(user_data["gender"], "value"):
         user_data["gender"] = user_data["gender"].value
 
+    if "password" in user_data and hasattr(user_data["password"], "value"):
+        user_data["password"] = jwt_security.get_password_hash(user_data["password"])
+
     user_data = {
         k: v for k, v in user_data.items() if k in allowed_columns and v is not None
     }
-
     if not user_data:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
