@@ -1,4 +1,6 @@
 dev:
+	@docker-compose --env-file .env up --build -d
+dev-live:
 	@docker-compose --env-file .env up --build
 dev-down:
 	@docker-compose down
