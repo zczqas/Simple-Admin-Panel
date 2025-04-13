@@ -1,16 +1,18 @@
+<!DOCTYPE html>
 <div
   class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center"
+  id="artist-modal-overlay"
 >
   <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
     <div class="flex justify-between items-center mb-4">
-      <h3 class="text-lg font-bold" id="form-title">Add New Artist</h3>
+      <h3 class="text-lg font-bold" id="modal-title">Edit Artist</h3>
       <button class="text-gray-500 hover:text-gray-700" onclick="closeModal()">
         &times;
       </button>
     </div>
 
-    <form id="artist-form" hx-swap="outerHTML" onsubmit="submitForm(event)">
-      <input type="hidden" id="artist-id" name="id" value="" />
+    <form id="artist-form" onsubmit="window.handleSubmit(event)">
+      <input type="hidden" id="artist-id" name="id" />
 
       <div class="mb-4">
         <label class="block text-gray-700 text-sm font-bold mb-2" for="name">
@@ -113,7 +115,7 @@
           class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
           id="submit-button"
         >
-          Save
+          Update Artist
         </button>
       </div>
     </form>
@@ -123,68 +125,25 @@
 </div>
 
 <script>
-  const urlParams = new URLSearchParams(window.location.search);
-  const artistId = urlParams.get("id");
-  const form = document.getElementById("artist-form");
-  const formTitle = document.getElementById("form-title");
-
-  if (artistId) {
-    formTitle.textContent = "Edit Artist";
-    document.getElementById("artist-id").value = artistId;
-
-    fetch(`/api/v1/artist/${artistId}`, {
-      headers: {
-        Authorization: "Bearer " + localStorage.getItem("access_token"),
-      },
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        return response.json();
-      })
-      .then((artist) => {
-        document.getElementById("name").value = artist.name || "";
-        document.getElementById("dob").value = artist.dob
-          ? artist.dob.substring(0, 10)
-          : "";
-        document.getElementById("gender").value = artist.gender || "M";
-        document.getElementById("address").value = artist.address || "";
-        document.getElementById("first_release_year").value =
-          artist.first_release_year || "";
-        document.getElementById("no_of_albums_released").value =
-          artist.no_of_albums_released || 0;
-
-        form.setAttribute("hx-put", `/api/v1/artist/${artistId}`);
-      })
-      .catch((error) => {
-        console.error("Error fetching artist:", error);
-        document.getElementById("form-result").innerHTML =
-          '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">Error loading artist data</div>';
-      });
-  } else {
-    form.setAttribute("hx-post", "/api/v1/artist/create");
-  }
-
-  function submitForm(e) {
+  window.handleSubmit = function (e) {
     e.preventDefault();
 
+    const form = document.getElementById("artist-form");
     if (form.checkValidity()) {
       const formData = new FormData(form);
-      const jsonData = {};
+      const artistId = formData.get("id");
 
-      formData.forEach((value, key) => {
-        if (value && key !== "id") {
-          if (key === "no_of_albums_released") {
-            jsonData[key] = parseInt(value);
-          } else {
-            jsonData[key] = value;
-          }
-        }
-      });
+      const jsonData = {
+        name: formData.get("name"),
+        dob: formData.get("dob"),
+        gender: formData.get("gender"),
+        address: formData.get("address"),
+        first_release_year: formData.get("first_release_year"),
+        no_of_albums_released: parseInt(formData.get("no_of_albums_released")),
+      };
 
-      fetch(form.getAttribute(artistId ? "hx-put" : "hx-post"), {
-        method: artistId ? "PUT" : "POST",
+      fetch(`/api/v1/artist/${artistId}`, {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
           Authorization: "Bearer " + localStorage.getItem("access_token"),
@@ -194,33 +153,75 @@
         .then((response) => {
           if (!response.ok) {
             return response.json().then((data) => {
-              throw new Error(data.detail || "Error saving artist");
+              throw new Error(data.detail || "Error updating artist");
             });
           }
           return response.json();
         })
-        .then((data) => {
-          const artistsTableBody =
-            document.getElementById("artists-table-body");
-          if (artistsTableBody) {
-            htmx.ajax("GET", "/api/v1/artist", {
-              target: "#artists-table-body",
-              swap: "innerHTML",
-            });
-          }
+        .then(() => {
+          htmx.ajax("GET", "/api/v1/artist", {
+            target: "#artists-table-body",
+            swap: "innerHTML",
+          });
           closeModal();
         })
         .catch((error) => {
-          console.error("Error saving artist:", error);
-          document.getElementById(
-            "form-result"
-          ).innerHTML = `<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">${error.message}</div>`;
+          console.error("Error updating artist:", error);
+          document.getElementById("form-result").innerHTML = `
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+              ${error.message}
+            </div>
+          `;
         });
     }
-  }
+    return false;
+  };
+
+  (function () {
+    const urlParams = new URLSearchParams(window.location.search);
+    const artistId = urlParams.get("id");
+
+    if (artistId) {
+      document.getElementById("artist-id").value = artistId;
+
+      fetch(`/api/v1/artist/${artistId}`, {
+        headers: {
+          Authorization: "Bearer " + localStorage.getItem("access_token"),
+        },
+      })
+        .then((response) => {
+          if (!response.ok) {
+            throw new Error("Failed to fetch artist details");
+          }
+          return response.json();
+        })
+        .then((artist) => {
+          document.getElementById("name").value = artist.name || "";
+          document.getElementById("dob").value = artist.dob
+            ? artist.dob.substring(0, 10)
+            : "";
+          document.getElementById("gender").value = artist.gender || "M";
+          document.getElementById("address").value = artist.address || "";
+          document.getElementById("first_release_year").value =
+            artist.first_release_year || "";
+          document.getElementById("no_of_albums_released").value =
+            artist.no_of_albums_released || 0;
+        })
+        .catch((error) => {
+          console.error("Error loading artist data:", error);
+          document.getElementById("form-result").innerHTML = `
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+              Failed to load artist details
+            </div>
+          `;
+        });
+    }
+  })();
 
   function closeModal() {
-    const modal = document.querySelector(".fixed");
-    modal.remove();
+    const modal = document.getElementById("artist-modal-overlay");
+    if (modal) {
+      modal.remove();
+    }
   }
 </script>

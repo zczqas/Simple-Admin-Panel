@@ -19,6 +19,7 @@
           <th class="py-2 px-4 text-left border-b">Name</th>
           <th class="py-2 px-4 text-left border-b">Gender</th>
           <th class="py-2 px-4 text-left border-b">Date of Birth</th>
+          <th class="py-2 px-4 text-left border-b">Address</th>
           <th class="py-2 px-4 text-left border-b">First Release Year</th>
           <th class="py-2 px-4 text-left border-b">Albums Released</th>
           <th class="py-2 px-4 text-left border-b">Actions</th>
@@ -113,6 +114,7 @@
               <td class="py-2 px-4 border-b">${artist.name || "-"}</td>
               <td class="py-2 px-4 border-b">${genderDisplay}</td>
               <td class="py-2 px-4 border-b">${dob}</td>
+              <td class="py-2 px-4 border-b">${artist.address || "-"}</td>
               <td class="py-2 px-4 border-b">${
                 artist.first_release_year || "-"
               }</td>
@@ -122,9 +124,7 @@
               <td class="py-2 px-4 border-b space-x-2">
                 <button
                   class="text-blue-500 hover:text-blue-700"
-                  hx-get="artist-form.html?id=${artist.id}"
-                  hx-target="#artist-modal-container"
-                  hx-swap="innerHTML">
+                  onclick="openEditModal(${artist.id})">
                   Edit
                 </button>
                 <button
@@ -191,6 +191,95 @@
           console.error("Error deleting artist:", error);
           alert(error.message || "Failed to delete artist");
         });
+    }
+  }
+
+  async function openEditModal(artistId) {
+    try {
+      const artistResponse = await fetch(`/api/v1/artist/${artistId}`, {
+        headers: {
+          Authorization: "Bearer " + localStorage.getItem("access_token"),
+        },
+      });
+
+      if (!artistResponse.ok) {
+        throw new Error("Failed to fetch artist details");
+      }
+
+      const artistData = await artistResponse.json();
+
+      const formResponse = await fetch("edit-artist.html");
+      const html = await formResponse.text();
+      document.getElementById("artist-modal-container").innerHTML = html;
+
+      document.getElementById("artist-id").value = artistId;
+      document.getElementById("name").value = artistData.name || "";
+      document.getElementById("dob").value = artistData.dob
+        ? artistData.dob.substring(0, 10)
+        : "";
+      document.getElementById("gender").value = artistData.gender || "M";
+      document.getElementById("address").value = artistData.address || "";
+      document.getElementById("first_release_year").value =
+        artistData.first_release_year || "";
+      document.getElementById("no_of_albums_released").value =
+        artistData.no_of_albums_released || 0;
+
+      document.getElementById("artist-form").onsubmit = async function (e) {
+        e.preventDefault();
+
+        const form = this;
+        const formData = new FormData(form);
+
+        const jsonData = {
+          name: formData.get("name"),
+          dob: formData.get("dob"),
+          gender: formData.get("gender"),
+          address: formData.get("address"),
+          first_release_year: formData.get("first_release_year"),
+          no_of_albums_released: parseInt(
+            formData.get("no_of_albums_released")
+          ),
+        };
+
+        try {
+          const response = await fetch(`/api/v1/artist/${artistId}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + localStorage.getItem("access_token"),
+            },
+            body: JSON.stringify(jsonData),
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.detail || "Error updating artist");
+          }
+
+          htmx.ajax("GET", "/api/v1/artist", {
+            target: "#artists-table-body",
+            swap: "innerHTML",
+          });
+          closeModal();
+        } catch (error) {
+          console.error("Error updating artist:", error);
+          document.getElementById("form-result").innerHTML = `
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+              ${error.message}
+            </div>
+          `;
+        }
+      };
+    } catch (error) {
+      console.error("Error in edit modal:", error);
+      alert("Failed to load edit form");
+    }
+  }
+
+  function closeModal() {
+    const modal = document.getElementById("artist-modal-overlay");
+    if (modal) {
+      modal.remove();
     }
   }
 </script>
