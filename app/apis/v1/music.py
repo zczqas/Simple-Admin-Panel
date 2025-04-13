@@ -11,6 +11,18 @@ from app.core.schema.music import (
 router = APIRouter(prefix="/music", tags=["music"])
 
 
+@router.get("/{music_id}", response_model=MusicResponseSchema)
+def get_music_by_id(music_id: int):
+    query = "SELECT * FROM music WHERE id = %s"
+    music = fetch_one(query, (music_id,))
+    if not music:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Music not found",
+        )
+    return music
+
+
 @router.get(
     "/artist/{artist_id}", response_model=PaginatedResponse[MusicResponseSchema]
 )

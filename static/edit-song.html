@@ -5,14 +5,15 @@
 >
   <div class="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
     <div class="flex justify-between items-center mb-4">
-      <h3 class="text-lg font-bold" id="modal-title">Add New Song</h3>
+      <h3 class="text-lg font-bold" id="modal-title">Edit Song</h3>
       <button class="text-gray-500 hover:text-gray-700" onclick="closeModal()">
         &times;
       </button>
     </div>
 
-    <form id="song-form">
-      <input type="hidden" id="artist-id" name="artist_id" value="" />
+    <form id="song-form" onsubmit="window.handleSubmit(event)">
+      <input type="hidden" id="song-id" name="id" />
+      <input type="hidden" id="artist-id" name="artist_id" />
 
       <div class="mb-4">
         <label class="block text-gray-700 text-sm font-bold mb-2" for="title">
@@ -75,7 +76,7 @@
           class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
           id="submit-button"
         >
-          Create Song
+          Update Song
         </button>
       </div>
     </form>
@@ -91,50 +92,46 @@
     const form = document.getElementById("song-form");
     if (form.checkValidity()) {
       const formData = new FormData(form);
+      const songId = formData.get("id");
+      const artistId = formData.get("artist_id");
+
       const jsonData = {
-        artist_id: parseInt(formData.get("artist_id")),
+        artist_id: parseInt(artistId),
         title: formData.get("title"),
         album_name: formData.get("album_name"),
         genre: formData.get("genre"),
       };
 
-      const songId = formData.get("id");
-      const artistId = formData.get("artist_id");
-
-      fetch(
-        songId ? `/api/v1/music/update/${songId}` : "/api/v1/music/create",
-        {
-          method: songId ? "PUT" : "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + localStorage.getItem("access_token"),
-          },
-          body: JSON.stringify(jsonData),
-        }
-      )
+      fetch(`/api/v1/music/update/${songId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + localStorage.getItem("access_token"),
+        },
+        body: JSON.stringify(jsonData),
+      })
         .then((response) => {
           if (!response.ok) {
             return response.json().then((data) => {
-              throw new Error(data.detail || "Error saving song");
+              throw new Error(data.detail || "Error updating song");
             });
           }
           return response.json();
         })
         .then((data) => {
-          const songsTableBody = document.getElementById("songs-table-body");
-          if (songsTableBody) {
-            htmx.ajax("GET", `/api/v1/music/artist/${artistId}`, {
-              target: "#songs-table-body",
-              swap: "innerHTML",
-            });
-          }
+          htmx.ajax("GET", `/api/v1/music/artist/${artistId}`, {
+            target: "#songs-table-body",
+            swap: "innerHTML",
+          });
           closeModal();
         })
         .catch((error) => {
-          console.error("Error saving song:", error);
-          document.getElementById(
-            "form-result"
-          ).innerHTML = `<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">${error.message}</div>`;
+          console.error("Error updating song:", error);
+          document.getElementById("form-result").innerHTML = `
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+              ${error.message}
+            </div>
+          `;
         });
     }
     return false;
@@ -144,40 +141,34 @@
     const urlParams = new URLSearchParams(window.location.search);
     const songId = urlParams.get("id");
     const artistId = urlParams.get("artist_id");
-    const formTitle = document.getElementById("modal-title");
 
-    document.getElementById("artist-id").value = artistId;
-
-    if (songId) {
-      formTitle.textContent = "Edit Song";
+    if (songId && artistId) {
       document.getElementById("song-id").value = songId;
-
-      const token = localStorage.getItem("access_token");
-      if (!token) {
-        alert("Authorization token is missing. Please log in again.");
-        return;
-      }
+      document.getElementById("artist-id").value = artistId;
 
       fetch(`/api/v1/music/${songId}`, {
         headers: {
-          Authorization: `Bearer ${token}`,
+          Authorization: "Bearer " + localStorage.getItem("access_token"),
         },
       })
         .then((response) => {
           if (!response.ok) {
-            throw new Error("Network response was not ok");
+            throw new Error("Failed to fetch song details");
           }
           return response.json();
         })
-        .then((data) => {
-          document.getElementById("title").value = data.title || "";
-          document.getElementById("album_name").value = data.album_name || "";
-          document.getElementById("genre").value = data.genre || "";
+        .then((song) => {
+          document.getElementById("title").value = song.title || "";
+          document.getElementById("album_name").value = song.album_name || "";
+          document.getElementById("genre").value = song.genre || "";
         })
         .catch((error) => {
           console.error("Error loading song data:", error);
-          document.getElementById("form-result").innerHTML =
-            '<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">Error loading song data</div>';
+          document.getElementById("form-result").innerHTML = `
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+              Failed to load song details
+            </div>
+          `;
         });
     }
   })();
